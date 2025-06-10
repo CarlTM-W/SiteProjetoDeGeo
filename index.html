@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC Power - Versão Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Metal+Mania&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cursor-color: #ef4444;
+        }
+        body {
+            background-color: #0c0c14;
+            color: #F3F4F6;
+            font-family: 'Teko', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-metal-mania {
+            font-family: 'Metal Mania', cursive;
+        }
+        .cursor-dot, .cursor-outline {
+            pointer-events: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--cursor-color);
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(239, 68, 68, 0.2);
+            transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease;
+        }
+        body:hover .cursor-dot, body:hover .cursor-outline {
+            opacity: 1;
+        }
+        a:hover ~ .cursor-outline, button:hover ~ .cursor-outline, .card:hover ~ .cursor-outline {
+            transform: translate(-50%, -50%) scale(1.2);
+            background-color: rgba(248, 113, 113, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+            text-shadow: 0 0 5px rgba(255,255,255,0);
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #f87171, #ef4444);
+            transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #f87171;
+            text-shadow: 0 0 8px #ef4444;
+        }
+        .nav-link.active:after, .nav-link:hover:after {
+            width: 100%;
+        }
+        #home .parallax-wrap {
+            perspective: 1000px;
+        }
+        #home .parallax-el {
+            transition: transform 0.3s ease-out;
+        }
+        #bebidas .drink-card {
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease, filter 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            height: 400px; /* Definindo altura fixa */
+        }
+        #drinks-container.selection-active .drink-card:not(.selected) {
+            transform: scale(0.9);
+            opacity: 0.6;
+            filter: blur(2px);
+        }
+        #drinks-container.selection-active .drink-card.selected {
+            transform: scale(1.15);
+            z-index: 10;
+        }
+        .drink-info {
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .drink-info img {
+             transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .character-desc {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s, opacity 0.4s ease 0.1s;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #d1d5db;
+        }
+        #drinks-container.selection-active .drink-card.selected .drink-info {
+            transform: translateY(-160px);
+        }
+        #drinks-container.selection-active .drink-card.selected .drink-info img {
+            transform: scale(0.6) translateY(-100px);
+        }
+        #drinks-container.selection-active .drink-card.selected .character-desc {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+        .close-btn:hover {
+            background-color: #ef4444;
+            transform: scale(1.1);
+        }
+        #drinks-container.selection-active .drink-card.selected .close-btn {
+            display: flex;
+        }
+        .quiz-option {
+            transition: all 0.3s ease;
+            border: 2px solid #4b5563;
+        }
+        .quiz-option:hover {
+            background-color: #374151;
+            border-color: #f87171;
+            transform: translateY(-5px);
+        }
+        .quiz-option.selected {
+            background-color: #ef4444;
+            border-color: #f87171;
+            color: white;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f87171; }
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn 0.8s ease-out; }
+    </style>
+</head>
+<body class="bg-[#0c0c14]">
+
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <header class="bg-black/30 backdrop-blur-sm sticky top-0 z-50 shadow-lg shadow-red-900/20">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+             <div>
+                 <img src="Logo.jpg" alt="Logo DC Power" class="h-16 transition-transform duration-300 hover:scale-110 cursor-pointer" onclick="showPage('home')">
+            </div>
+            <div class="hidden md:flex items-center space-x-8 text-xl">
+                <a href="#" class="nav-link active" onclick="showPage('home', this)">Home</a>
+                <a href="#" class="nav-link" onclick="showPage('bebidas', this)">Bebidas</a>
+                <a href="#" class="nav-link" onclick="showPage('personagens', this)">Personagens</a>
+                <a href="#" class="nav-link" onclick="showPage('equipe', this)">Equipe</a>
+                <a href="#" class="nav-link" onclick="showPage('contato', this)">Conecte-se</a>
+            </div>
+             <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4 space-y-2 text-lg">
+            <a href="#" class="block nav-link" onclick="showPage('home', this); closeMobileMenu();">Home</a>
+            <a href="#" class="block nav-link" onclick="showPage('bebidas', this); closeMobileMenu();">Bebidas</a>
+            <a href="#" class="block nav-link" onclick="showPage('personagens', this); closeMobileMenu();">Personagens</a>
+            <a href="#" class="block nav-link" onclick="showPage('equipe', this); closeMobileMenu();">Equipe</a>
+            <a href="#" class="block nav-link" onclick="showPage('contato', this); closeMobileMenu();">Conecte-se</a>
+        </div>
+    </header>
+
+    <main id="main-content" class="container mx-auto px-6 py-12">
+
+        <section id="home" class="page-section active">
+             <div class="text-center min-h-[70vh] flex flex-col justify-center items-center parallax-wrap">
+                <div class="parallax-el" data-speed="2">
+                    <img src="Logo.jpg" alt="Logo DC Power Grande" class="mx-auto mb-8 w-1/2 md:w-1/3">
+                </div>
+                <div class="parallax-el" data-speed="-1">
+                    <h1 class="font-metal-mania text-6xl md:text-8xl text-red-500 drop-shadow-lg" style="text-shadow: 2px 2px 20px #ef4444;">DC POWER</h1>
+                    <p class="text-2xl md:text-4xl mt-4 tracking-widest">A ENERGIA QUE TE TRANSFORMA</p>
+                </div>
+             </div>
+            <div class="mt-20 text-center reveal">
+                 <h2 class="font-metal-mania text-5xl md:text-6xl mb-6 text-center text-red-400">QUAL DC POWER É VOCÊ?</h2>
+                 <p class="max-w-2xl mx-auto text-xl text-gray-400 mb-8">Responda 3 perguntas rápidas e descubra o sabor que mais combina com seu poder interior.</p>
+                 <div id="quiz-container" class="max-w-2xl mx-auto bg-gray-900 p-8 rounded-2xl shadow-2xl shadow-red-900/20">
+                 </div>
+                 <div id="quiz-result" class="hidden max-w-2xl mx-auto bg-gray-900 p-8 rounded-2xl shadow-2xl text-center">
+                 </div>
+            </div>
+        </section>
+
+        <section id="bebidas" class="page-section">
+            <div class="text-center fade-in">
+                <h2 class="font-metal-mania text-5xl md:text-7xl mb-12 text-center text-red-500 reveal">ESCOLHA SEU PODER</h2>
+                <div id="drinks-container" class="grid md:grid-cols-3 gap-10">
+                    <div class="drink-card bg-gray-800/50 rounded-2xl pt-6 text-center border-2 border-transparent hover:border-red-500">
+                         <button class="close-btn">×</button>
+                         <div class="drink-info pointer-events-none">
+                             <img src="Morango.jpg" alt="Personagem Ruby" class="w-48 h-48 rounded-full mx-auto mb-4 object-cover border-4 border-red-400">
+                             <h3 class="font-metal-mania text-4xl text-red-400">RUBY'S RAGE</h3>
+                             <p class="text-xl mt-2 mb-4 font-semibold">Morango Feroz</p>
+                         </div>
+                         <div class="character-desc pointer-events-none">
+                            <p>Ruby vive em um eterno show de rock. Cada gole de 'Ruby's Rage' é como o primeiro acorde de uma guitarra distorcida: uma explosão de energia que te joga no meio da multidão. Para quem não segue regras, mas as cria.</p>
+                         </div>
+                    </div>
+                    <div class="drink-card bg-gray-800/50 rounded-2xl pt-6 text-center border-2 border-transparent hover:border-green-500">
+                        <button class="close-btn">×</button>
+                        <div class="drink-info pointer-events-none">
+                            <img src="Melancia.jpg" alt="Personagem Melina" class="w-48 h-48 rounded-full mx-auto mb-4 object-cover border-4 border-green-400">
+                            <h3 class="font-metal-mania text-4xl text-green-400">MELINA'S CHILL</h3>
+                            <p class="text-xl mt-2 mb-4 font-semibold">Melancia Refrescante</p>
+                        </div>
+                        <div class="character-desc pointer-events-none">
+                           <p>No universo de pixels e estratégias, Melina é a rainha da calma. 'Melina's Chill' é o seu power-up secreto: o foco líquido que aguça os reflexos e clareia a mente para a vitória. A energia ideal para quem joga para vencer.</p>
+                        </div>
+                    </div>
+                    <div class="drink-card bg-gray-800/50 rounded-2xl pt-6 text-center border-2 border-transparent hover:border-yellow-500">
+                         <button class="close-btn">×</button>
+                         <div class="drink-info pointer-events-none">
+                            <img src="Manga.jpg" alt="Personagem Miguel" class="w-48 h-48 rounded-full mx-auto mb-4 object-cover border-4 border-yellow-400">
+                            <h3 class="font-metal-mania text-4xl text-yellow-500">MIGUEL'S BURST</h3>
+                            <p class="text-xl mt-2 mb-4 font-semibold">Manga Explosiva</p>
+                         </div>
+                         <div class="character-desc pointer-events-none">
+                            <p>Para Miguel, cada rua é uma pista e cada obstáculo é uma oportunidade. 'Miguel's Burst' é a trilha sonora de suas aventuras urbanas, um impulso de sabor tropical que acompanha suas manobras mais ousadas.</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="personagens" class="page-section">
+             <div class="text-center fade-in">
+                 <h2 class="font-metal-mania text-5xl md:text-7xl mb-16 text-center text-red-500 reveal">OS ÍCONES DC POWER</h2>
+                 
+                 <div class="space-y-20">
+                     <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12 reveal bg-gray-900/50 p-8 rounded-2xl border-l-8 border-red-500">
+                         <img src="Morango.jpg" alt="Ruby" class="w-64 h-64 rounded-lg object-cover transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-red-500/30">
+                         <div class="text-left">
+                             <h3 class="font-metal-mania text-5xl text-red-400">Ruby</h3>
+                             <p class="text-2xl mt-1 font-semibold">A Estrela do Rock</p>
+                             <p class="mt-4 text-lg text-gray-300 max-w-xl">
+                                 Com sua atitude punk e cabelo rosa-choque, Ruby é a personificação da energia crua. Ela vive no ritmo de um solo de guitarra, sempre no volume máximo. Seu sabor, Morango Feroz, é para quem não tem medo de se destacar e fazer barulho.
+                             </p>
+                         </div>
+                     </div>
+
+                     <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12 reveal bg-gray-900/50 p-8 rounded-2xl border-l-8 border-green-500">
+                         <img src="Melancia.jpg" alt="Melina" class="w-64 h-64 rounded-lg object-cover transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-green-500/30">
+                         <div class="text-left">
+                             <h3 class="font-metal-mania text-5xl text-green-500">Melina</h3>
+                             <p class="text-2xl mt-1 font-semibold">A Gamer Focada</p>
+                             <p class="mt-4 text-lg text-gray-300 max-w-xl">
+                               Melina é a calma em meio ao caos digital. Com seu olhar sereno, ela navega por mundos virtuais com precisão. Seu sabor, Melancia Refrescante, é o combustível para longas sessões de jogos, mantendo a mente clara.
+                             </p>
+                         </div>
+                     </div>
+
+                     <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12 reveal bg-gray-900/50 p-8 rounded-2xl border-l-8 border-yellow-500">
+                         <img src="Manga.jpg" alt="Miguel" class="w-64 h-64 rounded-lg object-cover transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-yellow-500/30">
+                         <div class="text-left">
+                             <h3 class="font-metal-mania text-5xl text-yellow-500">Miguel</h3>
+                             <p class="text-2xl mt-1 font-semibold">O Explorador Urbano</p>
+                             <p class="mt-4 text-lg text-gray-300 max-w-xl">
+                               Miguel vê a cidade como seu playground. Com um sorriso confiante, está sempre em movimento. Seu sabor, Manga Explosiva, combina com sua personalidade vibrante e sua sede de aventura.
+                             </p>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <section id="equipe" class="page-section">
+            <div class="text-center fade-in">
+                <h2 class="font-metal-mania text-5xl md:text-7xl mb-12 text-center text-red-500 reveal">NOSSO TIME</h2>
+                
+                <div class="max-w-6xl mx-auto space-y-16">
+                    <div class="reveal">
+                        <h3 class="font-metal-mania text-5xl mb-8 text-red-400 tracking-wider">PROJETO</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 text-2xl font-semibold">
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Bryan</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">João Faria</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">João Vitor</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Arthur</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Laysa</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Letícia</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Luís Felipe</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Lorenzo</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Pedro Faria</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Miguel Machado</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-red-500/50 transition-all duration-300">Theo Pineda</div>
+                        </div>
+                    </div>
+
+                    <div class="reveal">
+                        <h3 class="font-metal-mania text-5xl mb-8 text-yellow-500 tracking-wider">PRODUTO</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 text-2xl font-semibold">
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Caio</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Bianca</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Maria Júlia</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Samuel</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Yu Wang Minh</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Helena Carvalho</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Ludmilla</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Pedro Lucas</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Anderson</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Ana Luisa</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Elias</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-yellow-500/50 transition-all duration-300">Mayara</div>
+                        </div>
+                    </div>
+
+                    <div class="reveal">
+                        <h3 class="font-metal-mania text-5xl mb-8 text-green-400 tracking-wider">MARKETING</h3>
+                         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 text-2xl font-semibold">
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-green-500/50 transition-all duration-300">Lavínia</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-green-500/50 transition-all duration-300">Pedro Henrique</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-green-500/50 transition-all duration-300">Miguel Rodrigues</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-green-500/50 transition-all duration-300">Yuri</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-green-500/50 transition-all duration-300">Luís</div>
+                            <div class="bg-gray-800 p-5 rounded-lg transform hover:scale-110 hover:bg-green-500/50 transition-all duration-300">Luís Gustavo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="contato" class="page-section">
+            <div class="text-center fade-in">
+                <h2 class="font-metal-mania text-5xl md:text-7xl mb-12 text-center text-red-500 reveal">CONECTE-SE</h2>
+                <div class="max-w-3xl mx-auto reveal">
+                    <p class="text-2xl mb-10 text-gray-300">
+                        Nossa energia não para por aqui. Siga-nos no Instagram para ficar por dentro de todas as novidades, eventos e promoções. Faça parte da nossa comunidade!
+                    </p>
+                    <a href="https://www.instagram.com/dcpower.co/" target="_blank" rel="noopener noreferrer" class="inline-block group">
+                        <img src="Latinhas.png" alt="Latas de energético DC Power" class="rounded-2xl shadow-2xl shadow-red-800/40 transition-transform duration-300 group-hover:scale-105">
+                        <div class="mt-6 bg-red-500 group-hover:bg-red-600 text-white font-bold py-4 px-8 rounded-lg text-3xl font-metal-mania tracking-wider transition-all duration-300">
+                           @D C P O W E R . C O
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-black/30 mt-16 py-6 border-t border-red-900/30">
+        <div class="container mx-auto text-center text-gray-400">
+            <p>&copy; 2025 DC Power. Todos os direitos reservados.</p>
+            <p>Um projeto de geografia criado com <span class="text-red-500 font-metal-mania text-lg">PODER</span> pela Equipe.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pages = document.querySelectorAll('.page-section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.showPage = (pageId, clickedLink) => {
+            pages.forEach(page => page.classList.remove('active'));
+            const targetPage = document.getElementById(pageId);
+            if(targetPage) {
+                targetPage.classList.add('active');
+                setupIntersectionObserver();
+            }
+            
+            navLinks.forEach(link => link.classList.remove('active'));
+            if (clickedLink) {
+                document.querySelectorAll(`.nav-link[onclick*="'${pageId}'"]`).forEach(link => link.classList.add('active'));
+            } else {
+                 document.querySelectorAll(`.nav-link[onclick*="'home'"]`).forEach(link => link.classList.add('active'));
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        window.closeMobileMenu = () => mobileMenu.classList.add('hidden');
+
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+            cursorOutline.animate({
+                left: `${posX}px`,
+                top: `${posY}px`
+            }, { duration: 500, fill: 'forwards' });
+        });
+        
+        const parallaxWrap = document.querySelector('.parallax-wrap');
+        if (parallaxWrap) {
+            parallaxWrap.addEventListener('mousemove', (e) => {
+                const { width, height } = parallaxWrap.getBoundingClientRect();
+                const x = (e.clientX - width / 2) / width * 2;
+                const y = (e.clientY - height / 2) / height * 2;
+                
+                document.querySelectorAll('.parallax-el').forEach(el => {
+                    const speed = el.dataset.speed;
+                    const xOffset = -x * speed * 10;
+                    const yOffset = -y * speed * 10;
+                    el.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
+                });
+            });
+        }
+
+        let observer;
+        function setupIntersectionObserver() {
+            if (observer) observer.disconnect();
+            
+            const options = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, options);
+
+            const revealElements = document.querySelectorAll('.reveal');
+            revealElements.forEach(el => {
+                el.classList.remove('visible');
+                observer.observe(el);
+            });
+        }
+        
+        const drinksContainer = document.getElementById('drinks-container');
+        const drinkCards = document.querySelectorAll('.drink-card');
+
+        drinkCards.forEach(card => {
+            card.addEventListener('click', () => {
+                if (drinksContainer.classList.contains('selection-active')) {
+                    return; 
+                }
+                
+                card.classList.add('selected');
+                drinksContainer.classList.add('selection-active');
+            });
+        });
+
+        document.querySelectorAll('.close-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                const card = button.closest('.drink-card');
+                card.classList.remove('selected');
+                drinksContainer.classList.remove('selection-active');
+            });
+        });
+
+        const quizContainer = document.getElementById('quiz-container');
+        const quizResultContainer = document.getElementById('quiz-result');
+        const questions = [
+            {
+                question: "Qual seu rolê ideal para recarregar as energias?",
+                answers: { a: "Um show de rock insano", b: "Uma noite tranquila de jogos", c: "Explorar lugares novos na cidade" },
+                scores: { a: 'ruby', b: 'melina', c: 'miguel' }
+            },
+            {
+                question: "Sua playlist para o dia a dia toca principalmente:",
+                answers: { a: "Guitarras distorcidas e bateria pesada", b: "Lo-fi beats relaxantes para focar", c: "Eletrônica animada e pop vibrante" },
+                scores: { a: 'ruby', b: 'melina', c: 'miguel' }
+            },
+            {
+                question: "Seu superpoder dos sonhos seria:",
+                answers: { a: "Força sobre-humana", b: "Intelecto genial e estratégico", c: "Velocidade e agilidade extremas" },
+                scores: { a: 'ruby', b: 'melina', c: 'miguel' }
+            }
+        ];
+        let currentQuestionIndex = 0;
+        let userScores = { ruby: 0, melina: 0, miguel: 0 };
+        
+        function showQuestion() {
+            if (!quizContainer) return;
+            if (currentQuestionIndex >= questions.length) {
+                showResult();
+                return;
+            }
+            const q = questions[currentQuestionIndex];
+            let answersHtml = '';
+            for (const key in q.answers) {
+                answersHtml += `<button class="quiz-option w-full text-left p-4 rounded-lg mt-4 text-lg" data-score="${q.scores[key]}">${q.answers[key]}</button>`;
+            }
+            quizContainer.innerHTML = `
+                <h3 class="text-2xl font-semibold mb-4 text-gray-300">${q.question}</h3>
+                <div>${answersHtml}</div>
+                <p class="text-sm mt-6 text-gray-500">Pergunta ${currentQuestionIndex + 1} de ${questions.length}</p>
+            `;
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    userScores[e.target.dataset.score]++;
+                    currentQuestionIndex++;
+                    showQuestion();
+                });
+            });
+        }
+
+        function getWinner() {
+            let maxScore = -1;
+            let winner = '';
+            for(const char in userScores) {
+                if (userScores[char] > maxScore) {
+                    maxScore = userScores[char];
+                    winner = char;
+                }
+            }
+            const winners = Object.keys(userScores).filter(key => userScores[key] === maxScore);
+            return winners[Math.floor(Math.random() * winners.length)];
+        }
+
+        function showResult() {
+            if (!quizContainer || !quizResultContainer) return;
+            const winner = getWinner();
+            const resultsData = {
+                ruby: {
+                    name: "Ruby's Rage",
+                    desc: "Você é pura atitude e energia! Seu poder é intenso e contagiante, como um solo de guitarra que ninguém consegue ignorar. O sabor Morango Feroz é o seu combustível.",
+                    img: "Morango.jpg",
+                    color: "text-red-400"
+                },
+                melina: {
+                    name: "Melina's Chill",
+                    desc: "Sua força está na calma e na estratégia. Você tem o poder de se manter focado e tranquilo, mesmo sob pressão. O sabor Melancia Refrescante é seu aliado para a concentração.",
+                    img: "Melancia.jpg",
+                    color: "text-green-400"
+                },
+                miguel: {
+                    name: "Miguel's Burst",
+                    desc: "Aventura corre nas suas veias! Seu poder é a liberdade e a expressão através do movimento. Você está sempre pronto para a próxima manobra. Manga Explosiva é a sua vibe.",
+                    img: "Manga.jpg",
+                    color: "text-yellow-500"
+                }
+            };
+            const result = resultsData[winner];
+            quizContainer.classList.add('hidden');
+            quizResultContainer.classList.remove('hidden');
+            quizResultContainer.innerHTML = `
+                <p class="text-xl mb-2 text-gray-400">Seu poder interior é:</p>
+                <h3 class="font-metal-mania text-5xl ${result.color}">${result.name}</h3>
+                <img src="${result.img}" alt="${result.name}" class="w-48 h-48 rounded-full mx-auto my-6 object-cover border-4 border-current ${result.color}">
+                <p class="text-lg text-gray-300 mb-6">${result.desc}</p>
+                <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg text-xl" onclick="restartQuiz()">Refazer o Quiz</button>
+            `;
+        }
+        
+        window.restartQuiz = () => {
+             currentQuestionIndex = 0;
+             userScores = { ruby: 0, melina: 0, miguel: 0 };
+             quizResultContainer.classList.add('hidden');
+             quizContainer.classList.remove('hidden');
+             showQuestion();
+        }
+
+        showPage('home');
+        showQuestion();
+    });
+    </script>
+
+</body>
+</html>
